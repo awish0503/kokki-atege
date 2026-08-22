@@ -150,13 +150,18 @@
   #worldMap {
     border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 5px 0 rgba(0,0,0,0.12);
     background: #bfe9ff;
     touch-action: none;
+    /* もとの地図データのよこ:たての比率だと、たてはばが せまく見えて
+       しまうため、たてに ゆとりのある比率のカードにし、地図がわは
+       (preserveAspectRatio="slice"で)カードいっぱいに ひろがるように
+       表示する。よこの はしは 少しだけ 見切れるが、おもな くにぐには
+       まん中に あつまっているため 問題ない */
+    aspect-ratio: 3 / 2;
   }
   .world-map-svg {
     width: 100%;
-    height: auto;
+    height: 100%;
     display: block;
     transform-origin: 0 0;
     will-change: transform;
@@ -278,13 +283,18 @@
   #japanMap {
     border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 5px 0 rgba(0,0,0,0.12);
     background: #eef5e9;
     touch-action: none;
+    /* せかいちずと同じ考え方で、たてに ゆとりのある比率のカードにし、
+       地図がわは(preserveAspectRatio="slice"で)カードいっぱいに
+       ひろがるように表示する。1:1が きゅうしゅう地方ラベルも
+       ほぼ画面内に収まりつつ たてを ひろげられる ちょうどよい値
+       (2026/8/22 テストで確認ずみ) */
+    aspect-ratio: 1 / 1;
   }
   .japan-map-svg {
     width: 100%;
-    height: auto;
+    height: 100%;
     display: block;
     transform-origin: 0 0;
     will-change: transform;
@@ -354,6 +364,7 @@
   .map-region-actions button:active { transform: translateY(2px); box-shadow: none; }
   .region-actions-list { background: linear-gradient(180deg,#4fc3f7,#0288d1); }
   .region-actions-quiz { background: linear-gradient(180deg,#ff8a65,#f4511e); }
+  .region-actions-karuta { background: linear-gradient(180deg,#ce93d8,#8e24aa); }
   .region-actions-back {
     flex: 0 0 auto;
     min-width: 42px;
@@ -597,6 +608,94 @@
   }
   .next-btn:active { transform: translateY(3px); box-shadow: none; }
 
+  /* ---------- とくちょうカルタ ---------- */
+  .karuta-card {
+    background: linear-gradient(180deg, #f3e5f5, #e1bee7);
+    border: 3px solid #ce93d8;
+    border-radius: 26px;
+    padding: 18px 16px 16px;
+    text-align: center;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.08);
+    margin-bottom: 14px;
+  }
+  .karuta-card-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #6a1b9a;
+    margin-bottom: 8px;
+  }
+  .karuta-clue-text {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #4a148c;
+    min-height: 64px;
+    text-align: center;
+    background: #ffffffcc;
+    border-radius: 16px;
+    padding: 16px 10px;
+    box-sizing: border-box;
+  }
+  .karuta-speak-btn {
+    margin-top: 10px;
+    border: none;
+    border-radius: 999px;
+    padding: 9px 20px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #fff;
+    background: linear-gradient(180deg, #4fc3f7, #0288d1);
+    box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+    cursor: pointer;
+  }
+  .karuta-speak-btn:active { transform: translateY(2px); box-shadow: none; }
+  .karuta-speak-btn.unsupported { display: none; }
+
+  .karuta-choices {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .karuta-choice-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    border: 3px solid #ffe0b2;
+    border-radius: 16px;
+    padding: 10px 4px 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.06);
+  }
+  .karuta-choice-btn:active { transform: translateY(3px); box-shadow: none; }
+  .karuta-choice-flag {
+    display: block;
+    width: 100%;
+    max-width: 56px;
+    height: 40px;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 0 0 2px #fff, 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .karuta-choice-flag svg, .karuta-choice-shape svg { width: 100%; height: 100%; display: block; }
+  .karuta-choice-shape {
+    display: block;
+    width: 100%;
+    max-width: 56px;
+    height: 44px;
+  }
+  .karuta-choice-shape .pref-shape-path { fill: #7986cb; stroke: #37474f; stroke-width: 2.5; }
+  .karuta-choice-name {
+    font-size: 11px;
+    font-weight: bold;
+    color: #5d4037;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .karuta-choice-btn.correct { background: #e8f5e9; border-color: var(--ok); }
+  .karuta-choice-btn.wrong { background: #ffebee; border-color: var(--ng); }
+  .karuta-choice-btn.previewing { outline: 3px solid #29b6f6; outline-offset: 1px; }
+
   /* ---------- じょうほうモーダル（クイズしなくても見られる情報カード） ---------- */
   .info-modal {
     position: fixed;
@@ -686,12 +785,6 @@
   .result-actions { display: flex; flex-direction: column; gap: 10px; }
 
   .hidden { display: none !important; }
-  footer.credit {
-    text-align: center;
-    font-size: 11px;
-    color: #a1887f;
-    margin-top: 18px;
-  }
 </style>
 
 <div id="app">
@@ -724,10 +817,6 @@
       </span>
     </button>
 
-    <div class="record-box" id="recordBox">
-      <h3>🏆 いままでのきろく</h3>
-      <div id="recordList"></div>
-    </div>
   </section>
 
   <!-- REGION SELECT -->
@@ -753,12 +842,20 @@
       <button type="button" class="region-actions-back" id="mapRegionBack" aria-label="ぜんたいちずに もどる">🗺️</button>
       <button type="button" class="region-actions-list" id="mapRegionList">📖 いちらんで みる</button>
       <button type="button" class="region-actions-quiz" id="mapRegionQuiz">🎯 クイズに ちょうせん</button>
+      <button type="button" class="region-actions-karuta" id="mapRegionKaruta">🎴 カルタで あてっこ</button>
     </div>
     <button class="big-btn" id="btnAllMix" style="background:linear-gradient(180deg,#ff8a80,#ff5252); margin-top:14px;">
       <span class="emo">🌈</span>
       <span>
         ぜんぶミックス
         <span class="sub">6ちいき　ぜんぶから　10もん ランダム</span>
+      </span>
+    </button>
+    <button class="big-btn" id="btnAllKarutaMix" style="background:linear-gradient(180deg,#ce93d8,#8e24aa); margin-top:10px;">
+      <span class="emo">🎴</span>
+      <span>
+        カルタミックス
+        <span class="sub">6ちいき　ぜんぶから　とくちょうカルタ</span>
       </span>
     </button>
   </section>
@@ -832,6 +929,57 @@
     </div>
   </section>
 
+  <!-- KARUTA -->
+  <section class="screen" id="screen-karuta">
+    <div class="back-row">
+      <button class="back-btn" data-go="region">← ちいきをえらびなおす</button>
+      <button class="back-btn" data-go="home">🏠 ホームへ</button>
+    </div>
+    <div class="quiz-top">
+      <span id="karutaProgressText"></span>
+      <span id="karutaScoreText"></span>
+    </div>
+    <div class="progress-bar"><div id="karutaProgressBar" style="width:0%"></div></div>
+
+    <div class="karuta-card">
+      <div class="karuta-card-label">🎴 とくちょうを　よみあげるよ</div>
+      <div class="karuta-clue-text" id="karutaClueText"></div>
+      <button type="button" class="karuta-speak-btn" id="karutaSpeakBtn">🔊 よみあげる</button>
+      <div class="q-text">これは　どこの　くにの　とくちょうかな？</div>
+    </div>
+
+    <div class="karuta-choices" id="karutaChoicesBox"></div>
+
+    <div id="karutaAnswerArea" class="hidden">
+      <div class="mascot-box">
+        <div class="mascot-emo" id="karutaMascotEmo">🌍</div>
+        <div class="bubble" id="karutaMascotBubble"></div>
+      </div>
+      <div class="trivia-card" id="karutaTriviaCard"></div>
+      <button class="next-btn" id="karutaNextBtn">つぎの　カードへ　▶</button>
+    </div>
+  </section>
+
+  <!-- KARUTA RESULT -->
+  <section class="screen" id="screen-karuta-result">
+    <div class="result-box">
+      <div class="result-emo" id="karutaResultEmo">🎉</div>
+      <div class="result-score" id="karutaResultScore"></div>
+      <div class="result-msg" id="karutaResultMsg"></div>
+      <div class="result-actions">
+        <button class="big-btn btn-world" id="btnKarutaRetry">
+          <span class="emo">🔁</span><span>もういちど　あそぶ</span>
+        </button>
+        <button class="big-btn btn-japan" id="btnKarutaBackRegion" style="background:linear-gradient(180deg,#81c784,#4caf50);">
+          <span class="emo">🗺️</span><span>ちいきを　えらびなおす</span>
+        </button>
+        <button class="big-btn btn-japan" id="btnKarutaResultHome" style="background:linear-gradient(180deg,#90a4ae,#607d8b);">
+          <span class="emo">🏠</span><span>ホームへ　もどる</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
   <!-- JAPAN: REGION SELECT -->
   <section class="screen" id="screen-jp-region">
     <div class="back-row">
@@ -855,12 +1003,20 @@
       <button type="button" class="region-actions-back" id="jpMapRegionBack" aria-label="ぜんたいちずに もどる">🗾</button>
       <button type="button" class="region-actions-list" id="jpMapRegionList">📖 いちらんで みる</button>
       <button type="button" class="region-actions-quiz" id="jpMapRegionQuiz">🎯 クイズに ちょうせん</button>
+      <button type="button" class="region-actions-karuta" id="jpMapRegionKaruta">🎴 カルタで あてっこ</button>
     </div>
     <button class="big-btn" id="btnJpAllMix" style="background:linear-gradient(180deg,#ff8a80,#ff5252); margin-top:14px;">
       <span class="emo">🌈</span>
       <span>
         ぜんぶミックス
         <span class="sub">8ちほう　ぜんぶから　10もん ランダム</span>
+      </span>
+    </button>
+    <button class="big-btn" id="btnJpAllKarutaMix" style="background:linear-gradient(180deg,#ce93d8,#8e24aa); margin-top:10px;">
+      <span class="emo">🎴</span>
+      <span>
+        カルタミックス
+        <span class="sub">8ちほう　ぜんぶから　とくちょうカルタ</span>
       </span>
     </button>
   </section>
@@ -934,7 +1090,57 @@
     </div>
   </section>
 
-  <footer class="credit">こっきあてゲーム for あいせい ／ オフラインでも あそべます</footer>
+  <!-- JAPAN: KARUTA -->
+  <section class="screen" id="screen-jp-karuta">
+    <div class="back-row">
+      <button class="back-btn" data-go="jp-region">← ちほうをえらびなおす</button>
+      <button class="back-btn" data-go="home">🏠 ホームへ</button>
+    </div>
+    <div class="quiz-top">
+      <span id="jpKarutaProgressText"></span>
+      <span id="jpKarutaScoreText"></span>
+    </div>
+    <div class="progress-bar"><div id="jpKarutaProgressBar" style="width:0%"></div></div>
+
+    <div class="karuta-card">
+      <div class="karuta-card-label">🎴 とくちょうを　よみあげるよ</div>
+      <div class="karuta-clue-text" id="jpKarutaClueText"></div>
+      <button type="button" class="karuta-speak-btn" id="jpKarutaSpeakBtn">🔊 よみあげる</button>
+      <div class="q-text">これは　どこの　とどうふけんの　とくちょうかな？</div>
+    </div>
+
+    <div class="karuta-choices" id="jpKarutaChoicesBox"></div>
+
+    <div id="jpKarutaAnswerArea" class="hidden">
+      <div class="mascot-box">
+        <div class="mascot-emo" id="jpKarutaMascotEmo">🗾</div>
+        <div class="bubble" id="jpKarutaMascotBubble"></div>
+      </div>
+      <div class="trivia-card" id="jpKarutaTriviaCard"></div>
+      <button class="next-btn" id="jpKarutaNextBtn">つぎの　カードへ　▶</button>
+    </div>
+  </section>
+
+  <!-- JAPAN: KARUTA RESULT -->
+  <section class="screen" id="screen-jp-karuta-result">
+    <div class="result-box">
+      <div class="result-emo" id="jpKarutaResultEmo">🎉</div>
+      <div class="result-score" id="jpKarutaResultScore"></div>
+      <div class="result-msg" id="jpKarutaResultMsg"></div>
+      <div class="result-actions">
+        <button class="big-btn btn-world" id="btnJpKarutaRetry">
+          <span class="emo">🔁</span><span>もういちど　あそぶ</span>
+        </button>
+        <button class="big-btn btn-japan" id="btnJpKarutaBackRegion" style="background:linear-gradient(180deg,#81c784,#4caf50);">
+          <span class="emo">🗾</span><span>ちほうを　えらびなおす</span>
+        </button>
+        <button class="big-btn btn-japan" id="btnJpKarutaResultHome" style="background:linear-gradient(180deg,#90a4ae,#607d8b);">
+          <span class="emo">🏠</span><span>ホームへ　もどる</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
 </div>
 
 <div class="info-modal hidden" id="infoModal">
@@ -3678,6 +3884,7 @@ function updateHeaderStatus(screenId) {
 ========================================================= */
 function renderRecordBox() {
   const box = document.getElementById("recordList");
+  if (!box) return; // ホーム画面の「いままでのきろく」は2026/8/22の要望により削除ずみ
   const rows = REGIONS.filter((r) => r.id !== "all").map((r) => {
     const p = progress[r.id];
     const best = p && p.played ? `${p.best}もん せいかい（さいこう）` : "まだ ちょうせんしていないよ";
@@ -5634,8 +5841,15 @@ function zoomMapToRegion(regionId) {
   if (!bbox) return;
   const wrap = document.getElementById("worldMap");
   const vb = mapSvgEl.viewBox.baseVal;
-  const naturalScale = wrap.clientWidth / vb.width;
-  const bx = bbox.x * naturalScale, by = bbox.y * naturalScale;
+  // preserveAspectRatio="xMidYMid slice"のため、地図はカードの
+  // よこ・たての どちらかいっぱいに拡大されたうえで、はみ出したぶんが
+  // まん中よせで 見切れている。そのため、たんに「よこはば ÷ viewBoxの
+  // よこはば」ではなく、よこ・たてのうち 大きいほうの拡大率(nativeScale)と、
+  // 見切れ分をまん中よせにする ずれ(offsetX/Y)を あわせて計算する
+  const naturalScale = Math.max(wrap.clientWidth / vb.width, wrap.clientHeight / vb.height);
+  const offsetX = (wrap.clientWidth - vb.width * naturalScale) / 2;
+  const offsetY = (wrap.clientHeight - vb.height * naturalScale) / 2;
+  const bx = offsetX + bbox.x * naturalScale, by = offsetY + bbox.y * naturalScale;
   const bw = bbox.width * naturalScale, bh = bbox.height * naturalScale;
   let s = Math.min(wrap.clientWidth / bw, wrap.clientHeight / bh) * 0.78;
   s = Math.max(1.8, Math.min(mapZoom.max, s));
@@ -5807,6 +6021,9 @@ function renderWorldMap() {
     container.innerHTML = WORLD_MAP_SVG;
     container.dataset.rendered = "1";
     mapSvgEl = container.querySelector(".world-map-svg");
+    // カードがたてに ゆとりのある比率になったぶん、地図がわは
+    // (よこを 少し見切れさせてでも)カードいっぱいに 大きく表示する
+    mapSvgEl.setAttribute("preserveAspectRatio", "xMidYMid slice");
 
     REGIONS.filter((r) => r.id !== "all").forEach((r) => {
       const label = container.querySelector(`text.map-label[data-region="${r.id}"]`);
@@ -5937,16 +6154,27 @@ function startQuiz(regionId) {
   renderQuestion();
 }
 
-function pickChoices(correctCountry) {
-  const others = COUNTRIES.filter((c) => c.id !== correctCountry.id);
-  const wrong = shuffle(others).slice(0, 2);
+// まちがいの2つの選択肢は、できるだけ「今クイズちゅうの ちいき」の
+// 中から えらぶ(例:きたアメリカのクイズなら、まちがいの選択肢も
+// きたアメリカの くにだけにする)。これにより、こっきの見た目だけで
+// 「これは ちがう ちいきの くにだ」と分かってしまい、答えが
+// バレやすくなる問題を ふせぐ。ただし、ちいきの くにが少なくて
+// 2つ えらべないときだけ、ぜんこくの くにから おぎなう。
+function pickChoices(correctCountry, pool) {
+  const sameGroup = (pool || []).filter((c) => c.id !== correctCountry.id);
+  let wrong = shuffle(sameGroup).slice(0, 2);
+  if (wrong.length < 2) {
+    const usedIds = new Set([correctCountry.id, ...wrong.map((c) => c.id)]);
+    const fallback = COUNTRIES.filter((c) => !usedIds.has(c.id));
+    wrong = wrong.concat(shuffle(fallback).slice(0, 2 - wrong.length));
+  }
   return shuffle([correctCountry, ...wrong]);
 }
 
 function renderQuestion() {
   const c = session.list[session.index];
   session.answered = false;
-  session.choices = pickChoices(c);
+  session.choices = pickChoices(c, session.list);
   session.correctCountry = c;
 
   document.getElementById("flagBig").innerHTML = FLAG_SVG[c.id] || "";
@@ -6101,6 +6329,229 @@ document.getElementById("btnResultHome").addEventListener("click", () => {
 });
 
 /* =========================================================
+   とくちょうカルタ（せかいへん）
+   国名・国旗を見せずに「きまり・たべもの・こんちゅう・ぶんか」の
+   どれか1つ(軽量項目の国は「まめちしき」)を読みあげ文として出題し、
+   3択で正しい国(国旗)をあてるモード。選択肢の絞り込みは既存の
+   pickChoicesをそのまま流用し、同じ地域の中からえらばれるようにする。
+========================================================= */
+const KARUTA_CLUE_FIELDS = ["law", "food", "insect", "culture"];
+
+// ふりがな(rtタグの中身)を取りのぞいた「かんじ＋かな」だけのテキストを
+// 読みあげ用に作る(rtタグごと消さないと、同じ読みが二重に読まれてしまう)
+function speakableText(html) {
+  return (html || "").replace(/<rt>[\s\S]*?<\/rt>/g, "").replace(/<[^>]+>/g, "");
+}
+
+// 読み札の文章の中に、答え(くに/とどうふけんの名前)がそのまま書かれて
+// いると、読み上げただけで答えが分かってしまいクイズにならない。そこで
+// 名前があらわれる部分を「○○」に置きかえてかくす(テレビのクイズ番組の
+// 「まるまる」表記と同じ考え方)。まず生のHTML同士(ふりがなタグを含んだ
+// まま)で置換を試み、他の単語のふりがな表示をこわさないようにする。
+// ごくまれに名前の一部だけ別のふりがなが振られていて生HTMLのままでは
+// 見つからないケースがあるため、その場合だけふりがなを取りのぞいた
+// プレーンテキストどうしで比較・置換する(その文だけふりがなが消える)。
+function maskAnswerInClue(fieldHtml, rawName) {
+  if (!fieldHtml || !rawName) return fieldHtml;
+  if (fieldHtml.indexOf(rawName) !== -1) {
+    return fieldHtml.split(rawName).join("○○");
+  }
+  const plainField = speakableText(fieldHtml);
+  const tryMask = (name) => {
+    if (name && name.length >= 2 && plainField.indexOf(name) !== -1) {
+      return plainField.split(name).join("○○");
+    }
+    return null;
+  };
+  let plainName = speakableText(rawName);
+  let masked = tryMask(plainName);
+  if (masked) return masked;
+  // 都道府県名の「都・道・府・県」を取ってももういちど試す(例:秋田県→秋田)
+  const shortName = plainName.replace(/[都道府県]$/, "");
+  if (shortName !== plainName) {
+    masked = tryMask(shortName);
+    if (masked) return masked;
+  }
+  return fieldHtml;
+}
+
+function pickKarutaClue(c) {
+  let raw;
+  if (c.law !== undefined) {
+    const field = KARUTA_CLUE_FIELDS[Math.floor(Math.random() * KARUTA_CLUE_FIELDS.length)];
+    raw = c[field];
+  } else {
+    raw = c.fact;
+  }
+  return maskAnswerInClue(raw, c.name);
+}
+
+// 読み上げに使う日本語音声をえらぶ(できるだけ自然な声を優先)。
+// ブラウザ/端末によって用意されている音声の種類・質はさまざまで、
+// どの環境でも必ず自然な声になるとは限らないが、Android Chromeなどで
+// 高音質なことが多い「Google 日本語」系の音声があればそれを優先し、
+// なければ端末の既定(デフォルト)の日本語音声を使う。
+let selectedJaVoice = null;
+function refreshJaVoice() {
+  if (!("speechSynthesis" in window)) return;
+  const jaVoices = window.speechSynthesis.getVoices().filter(
+    (v) => v.lang && v.lang.toLowerCase().indexOf("ja") === 0
+  );
+  if (jaVoices.length === 0) { selectedJaVoice = null; return; }
+  selectedJaVoice =
+    jaVoices.find((v) => /google/i.test(v.name)) ||
+    jaVoices.find((v) => v.default) ||
+    jaVoices[0];
+}
+if ("speechSynthesis" in window) {
+  refreshJaVoice();
+  window.speechSynthesis.onvoiceschanged = refreshJaVoice;
+}
+
+function speakJapanese(html) {
+  if (!("speechSynthesis" in window)) return;
+  const text = speakableText(html);
+  if (!text) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "ja-JP";
+  utter.rate = 0.95;
+  if (selectedJaVoice) utter.voice = selectedJaVoice;
+  window.speechSynthesis.speak(utter);
+}
+
+let karutaSession = null;
+
+function startKaruta(regionId) {
+  const list = countriesForRegion(regionId);
+  karutaSession = { regionId, list, index: 0, correct: 0, answered: false };
+  showScreen("screen-karuta");
+  const speakBtn = document.getElementById("karutaSpeakBtn");
+  speakBtn.classList.toggle("unsupported", !("speechSynthesis" in window));
+  renderKarutaQuestion();
+}
+
+function renderKarutaQuestion() {
+  const c = karutaSession.list[karutaSession.index];
+  karutaSession.answered = false;
+  karutaSession.choices = pickChoices(c, karutaSession.list);
+  karutaSession.correctCountry = c;
+  karutaSession.clueText = pickKarutaClue(c);
+
+  document.getElementById("karutaClueText").innerHTML = karutaSession.clueText;
+  document.getElementById("karutaProgressText").textContent = `${karutaSession.index + 1} / ${karutaSession.list.length} まいめ`;
+  document.getElementById("karutaScoreText").textContent = `せいかい ${karutaSession.correct} まい`;
+  document.getElementById("karutaProgressBar").style.width = `${(karutaSession.index / karutaSession.list.length) * 100}%`;
+
+  const box = document.getElementById("karutaChoicesBox");
+  box.innerHTML = karutaSession.choices.map((choice) =>
+    `<button type="button" class="karuta-choice-btn" data-id="${choice.id}">
+       <span class="karuta-choice-flag">${FLAG_SVG[choice.id] || ""}</span>
+       <span class="karuta-choice-name">${choice.name}</span>
+     </button>`
+  ).join("");
+  box.querySelectorAll(".karuta-choice-btn").forEach((btn) => {
+    btn.addEventListener("click", () => onKarutaChoiceClick(btn));
+  });
+
+  document.getElementById("karutaAnswerArea").classList.add("hidden");
+}
+
+document.getElementById("karutaSpeakBtn").addEventListener("click", () => {
+  if (karutaSession) speakJapanese(karutaSession.clueText);
+});
+
+const KARUTA_CORRECT_MSGS = ["とったー！せいかい！", "すごい、よくわかったね！", "ピンポン！さすが！"];
+const KARUTA_WRONG_MSGS = ["おしい！つぎ がんばろう！", "だいじょうぶ、おぼえていこう！", "ちがったけど ナイスちょうせん！"];
+
+function onKarutaChoiceClick(btn) {
+  const chosenId = btn.dataset.id;
+  const correctCountry = karutaSession.correctCountry;
+
+  if (!karutaSession.answered) {
+    karutaSession.answered = true;
+    const isCorrect = chosenId === correctCountry.id;
+
+    if (isCorrect) {
+      karutaSession.correct++;
+      document.getElementById("karutaMascotEmo").textContent = "🥳";
+      document.getElementById("karutaMascotBubble").textContent =
+        KARUTA_CORRECT_MSGS[Math.floor(Math.random() * KARUTA_CORRECT_MSGS.length)];
+    } else {
+      document.getElementById("karutaMascotEmo").textContent = "😯";
+      document.getElementById("karutaMascotBubble").textContent =
+        KARUTA_WRONG_MSGS[Math.floor(Math.random() * KARUTA_WRONG_MSGS.length)];
+    }
+    const emo = document.getElementById("karutaMascotEmo");
+    emo.style.animation = "none";
+    void emo.offsetWidth;
+    emo.style.animation = "";
+
+    document.getElementById("karutaScoreText").textContent = `せいかい ${karutaSession.correct} まい`;
+
+    document.querySelectorAll(".karuta-choice-btn").forEach((b) => {
+      if (b.dataset.id === correctCountry.id) b.classList.add("correct");
+      else if (b.dataset.id === chosenId) b.classList.add("wrong");
+    });
+
+    document.getElementById("karutaAnswerArea").classList.remove("hidden");
+    document.getElementById("karutaAnswerArea").scrollIntoView({ behavior: "smooth", block: "end" });
+  }
+
+  const country = karutaSession.choices.find((ch) => ch.id === chosenId);
+  const card = document.getElementById("karutaTriviaCard");
+  const tag = country.id === correctCountry.id
+    ? '<span class="trivia-tag correct-tag">✅ せいかいの くに</span>'
+    : '<span class="trivia-tag">🔎 べつの くに</span>';
+  card.innerHTML = triviaCardHTML(country, tag);
+  document.querySelectorAll(".karuta-choice-btn").forEach((b) => {
+    b.classList.toggle("previewing", b.dataset.id === chosenId);
+  });
+}
+
+document.getElementById("karutaNextBtn").addEventListener("click", () => {
+  karutaSession.index++;
+  if (karutaSession.index >= karutaSession.list.length) {
+    finishKaruta();
+  } else {
+    renderKarutaQuestion();
+  }
+});
+
+function finishKaruta() {
+  const total = karutaSession.list.length;
+  const correct = karutaSession.correct;
+  const ratio = correct / total;
+  let emo = "🙂", msg = "またちょうせんしてね！";
+  if (ratio === 1) { emo = "🏆"; msg = "パーフェクト！カルタめいじんだね！"; }
+  else if (ratio >= 0.7) { emo = "🎉"; msg = "すごい！たくさん とれたね！"; }
+  else if (ratio >= 0.4) { emo = "😊"; msg = "いいちょうし！もういちど やってみよう！"; }
+
+  document.getElementById("karutaResultEmo").textContent = emo;
+  document.getElementById("karutaResultScore").textContent = `${correct} / ${total} まい とれた`;
+  document.getElementById("karutaResultMsg").textContent = msg;
+
+  showScreen("screen-karuta-result");
+}
+
+document.getElementById("mapRegionKaruta").addEventListener("click", () => {
+  if (focusedRegion) startKaruta(focusedRegion);
+});
+document.getElementById("btnAllKarutaMix").addEventListener("click", () => startKaruta("all"));
+
+document.getElementById("btnKarutaRetry").addEventListener("click", () => {
+  startKaruta(karutaSession.regionId);
+});
+document.getElementById("btnKarutaBackRegion").addEventListener("click", () => {
+  renderWorldMap();
+  showScreen("screen-region");
+});
+document.getElementById("btnKarutaResultHome").addEventListener("click", () => {
+  renderRecordBox();
+  showScreen("screen-home");
+});
+
+/* =========================================================
    にほんへん：ちほうマップ画面
 ========================================================= */
 /* =========================================================
@@ -6180,8 +6631,12 @@ function zoomJpMapToRegion(regionId) {
   if (!bbox) return;
   const wrap = document.getElementById("japanMap");
   const vb = jpMapSvgEl.viewBox.baseVal;
-  const naturalScale = wrap.clientWidth / vb.width;
-  const bx = bbox.x * naturalScale, by = bbox.y * naturalScale;
+  // せかいちずと同じ理由(preserveAspectRatio="slice")で、拡大率と
+  // まん中よせの ずれを あわせて計算する
+  const naturalScale = Math.max(wrap.clientWidth / vb.width, wrap.clientHeight / vb.height);
+  const offsetX = (wrap.clientWidth - vb.width * naturalScale) / 2;
+  const offsetY = (wrap.clientHeight - vb.height * naturalScale) / 2;
+  const bx = offsetX + bbox.x * naturalScale, by = offsetY + bbox.y * naturalScale;
   const bw = bbox.width * naturalScale, bh = bbox.height * naturalScale;
   let s = Math.min(wrap.clientWidth / bw, wrap.clientHeight / bh) * 0.78;
   s = Math.max(1.8, Math.min(jpMapZoom.max, s));
@@ -6327,6 +6782,9 @@ function renderJapanMap() {
     container.innerHTML = JAPAN_MAP_SVG;
     container.dataset.rendered = "1";
     jpMapSvgEl = container.querySelector(".japan-map-svg");
+    // カードがたてに ゆとりのある比率になったぶん、地図がわは
+    // (よこを 少し見切れさせてでも)カードいっぱいに 大きく表示する
+    jpMapSvgEl.setAttribute("preserveAspectRatio", "xMidYMid slice");
 
     JP_REGIONS.filter((r) => r.id !== "all").forEach((r) => {
       const label = container.querySelector(`text.jp-map-label[data-region="${r.id}"]`);
@@ -6438,16 +6896,25 @@ function startJapanQuiz(regionId) {
   renderJapanQuestion();
 }
 
-function pickJapanChoices(correctPref) {
-  const others = PREFECTURES.filter((p) => p.id !== correctPref.id);
-  const wrong = shuffle(others).slice(0, 2);
+// まちがいの2つの選択肢は、できるだけ「今クイズちゅうの ちほう」の
+// 中から えらぶ(世界編のpickChoicesと同じ考え方)。北海道ちほうのように
+// 1けんしかない場合など、ちほうの中だけでは2つ えらべないときだけ、
+// ぜんこくの都道府県から おぎなう。
+function pickJapanChoices(correctPref, pool) {
+  const sameGroup = (pool || []).filter((p) => p.id !== correctPref.id);
+  let wrong = shuffle(sameGroup).slice(0, 2);
+  if (wrong.length < 2) {
+    const usedIds = new Set([correctPref.id, ...wrong.map((p) => p.id)]);
+    const fallback = PREFECTURES.filter((p) => !usedIds.has(p.id));
+    wrong = wrong.concat(shuffle(fallback).slice(0, 2 - wrong.length));
+  }
   return shuffle([correctPref, ...wrong]);
 }
 
 function renderJapanQuestion() {
   const p = jpSession.list[jpSession.index];
   jpSession.answered = false;
-  jpSession.choices = pickJapanChoices(p);
+  jpSession.choices = pickJapanChoices(p, jpSession.list);
   jpSession.correctPref = p;
 
   document.getElementById("jpShapeBig").innerHTML = PREF_SHAPE_SVG[p.id] || "";
@@ -6581,6 +7048,149 @@ document.getElementById("btnJpBackRegion").addEventListener("click", () => {
   showScreen("screen-jp-region");
 });
 document.getElementById("btnJpResultHome").addEventListener("click", () => {
+  renderRecordBox();
+  showScreen("screen-home");
+});
+
+/* =========================================================
+   とくちょうカルタ（にほんへん）
+   都道府県名・形を見せずに「めいぶつ・とくさんひん」「にほんいち」の
+   どちらか1つを読みあげ文として出題し、3択で正しい都道府県(形)を
+   あてるモード。選択肢の絞り込みは既存のpickJapanChoicesをそのまま
+   流用し、同じ地方の中からえらばれるようにする（せかいへんのカルタと
+   同じ考え方。関数群は上のセクション参照）。
+========================================================= */
+const JP_KARUTA_CLUE_FIELDS = ["meibutsu", "nihonichi"];
+
+function pickJapanKarutaClue(p) {
+  const field = JP_KARUTA_CLUE_FIELDS[Math.floor(Math.random() * JP_KARUTA_CLUE_FIELDS.length)];
+  return maskAnswerInClue(p[field], p.name);
+}
+
+let jpKarutaSession = null;
+
+function startJapanKaruta(regionId) {
+  const list = prefsForRegion(regionId);
+  jpKarutaSession = { regionId, list, index: 0, correct: 0, answered: false };
+  showScreen("screen-jp-karuta");
+  const speakBtn = document.getElementById("jpKarutaSpeakBtn");
+  speakBtn.classList.toggle("unsupported", !("speechSynthesis" in window));
+  renderJapanKarutaQuestion();
+}
+
+function renderJapanKarutaQuestion() {
+  const p = jpKarutaSession.list[jpKarutaSession.index];
+  jpKarutaSession.answered = false;
+  jpKarutaSession.choices = pickJapanChoices(p, jpKarutaSession.list);
+  jpKarutaSession.correctPref = p;
+  jpKarutaSession.clueText = pickJapanKarutaClue(p);
+
+  document.getElementById("jpKarutaClueText").innerHTML = jpKarutaSession.clueText;
+  document.getElementById("jpKarutaProgressText").textContent = `${jpKarutaSession.index + 1} / ${jpKarutaSession.list.length} まいめ`;
+  document.getElementById("jpKarutaScoreText").textContent = `せいかい ${jpKarutaSession.correct} まい`;
+  document.getElementById("jpKarutaProgressBar").style.width = `${(jpKarutaSession.index / jpKarutaSession.list.length) * 100}%`;
+
+  const box = document.getElementById("jpKarutaChoicesBox");
+  box.innerHTML = jpKarutaSession.choices.map((choice) =>
+    `<button type="button" class="karuta-choice-btn" data-id="${choice.id}">
+       <span class="karuta-choice-shape">${PREF_SHAPE_SVG[choice.id] || ""}</span>
+       <span class="karuta-choice-name">${choice.name}</span>
+     </button>`
+  ).join("");
+  box.querySelectorAll(".karuta-choice-btn").forEach((btn) => {
+    btn.addEventListener("click", () => onJapanKarutaChoiceClick(btn));
+  });
+
+  document.getElementById("jpKarutaAnswerArea").classList.add("hidden");
+}
+
+document.getElementById("jpKarutaSpeakBtn").addEventListener("click", () => {
+  if (jpKarutaSession) speakJapanese(jpKarutaSession.clueText);
+});
+
+function onJapanKarutaChoiceClick(btn) {
+  const chosenId = btn.dataset.id;
+  const correctPref = jpKarutaSession.correctPref;
+
+  if (!jpKarutaSession.answered) {
+    jpKarutaSession.answered = true;
+    const isCorrect = chosenId === correctPref.id;
+
+    if (isCorrect) {
+      jpKarutaSession.correct++;
+      document.getElementById("jpKarutaMascotEmo").textContent = "🥳";
+      document.getElementById("jpKarutaMascotBubble").textContent =
+        KARUTA_CORRECT_MSGS[Math.floor(Math.random() * KARUTA_CORRECT_MSGS.length)];
+    } else {
+      document.getElementById("jpKarutaMascotEmo").textContent = "😯";
+      document.getElementById("jpKarutaMascotBubble").textContent =
+        KARUTA_WRONG_MSGS[Math.floor(Math.random() * KARUTA_WRONG_MSGS.length)];
+    }
+    const emo = document.getElementById("jpKarutaMascotEmo");
+    emo.style.animation = "none";
+    void emo.offsetWidth;
+    emo.style.animation = "";
+
+    document.getElementById("jpKarutaScoreText").textContent = `せいかい ${jpKarutaSession.correct} まい`;
+
+    document.querySelectorAll("#jpKarutaChoicesBox .karuta-choice-btn").forEach((b) => {
+      if (b.dataset.id === correctPref.id) b.classList.add("correct");
+      else if (b.dataset.id === chosenId) b.classList.add("wrong");
+    });
+
+    document.getElementById("jpKarutaAnswerArea").classList.remove("hidden");
+    document.getElementById("jpKarutaAnswerArea").scrollIntoView({ behavior: "smooth", block: "end" });
+  }
+
+  const pref = jpKarutaSession.choices.find((ch) => ch.id === chosenId);
+  const card = document.getElementById("jpKarutaTriviaCard");
+  const tag = pref.id === correctPref.id
+    ? '<span class="trivia-tag correct-tag">✅ せいかいの とどうふけん</span>'
+    : '<span class="trivia-tag">🔎 べつの とどうふけん</span>';
+  card.innerHTML = jpTriviaCardHTML(pref, tag);
+  document.querySelectorAll("#jpKarutaChoicesBox .karuta-choice-btn").forEach((b) => {
+    b.classList.toggle("previewing", b.dataset.id === chosenId);
+  });
+}
+
+document.getElementById("jpKarutaNextBtn").addEventListener("click", () => {
+  jpKarutaSession.index++;
+  if (jpKarutaSession.index >= jpKarutaSession.list.length) {
+    finishJapanKaruta();
+  } else {
+    renderJapanKarutaQuestion();
+  }
+});
+
+function finishJapanKaruta() {
+  const total = jpKarutaSession.list.length;
+  const correct = jpKarutaSession.correct;
+  const ratio = correct / total;
+  let emo = "🙂", msg = "またちょうせんしてね！";
+  if (ratio === 1) { emo = "🏆"; msg = "パーフェクト！カルタめいじんだね！"; }
+  else if (ratio >= 0.7) { emo = "🎉"; msg = "すごい！たくさん とれたね！"; }
+  else if (ratio >= 0.4) { emo = "😊"; msg = "いいちょうし！もういちど やってみよう！"; }
+
+  document.getElementById("jpKarutaResultEmo").textContent = emo;
+  document.getElementById("jpKarutaResultScore").textContent = `${correct} / ${total} まい とれた`;
+  document.getElementById("jpKarutaResultMsg").textContent = msg;
+
+  showScreen("screen-jp-karuta-result");
+}
+
+document.getElementById("jpMapRegionKaruta").addEventListener("click", () => {
+  if (jpFocusedRegion) startJapanKaruta(jpFocusedRegion);
+});
+document.getElementById("btnJpAllKarutaMix").addEventListener("click", () => startJapanKaruta("all"));
+
+document.getElementById("btnJpKarutaRetry").addEventListener("click", () => {
+  startJapanKaruta(jpKarutaSession.regionId);
+});
+document.getElementById("btnJpKarutaBackRegion").addEventListener("click", () => {
+  renderJapanMap();
+  showScreen("screen-jp-region");
+});
+document.getElementById("btnJpKarutaResultHome").addEventListener("click", () => {
   renderRecordBox();
   showScreen("screen-home");
 });
