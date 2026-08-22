@@ -320,6 +320,46 @@
   }
   .jp-map-label:active { opacity: 0.7; }
 
+  /* ---------- エリア別ズーム：ちいき/ちほうを タップしたあとに 出る パネル ---------- */
+  .map-region-actions {
+    display: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    background: #fff8ee;
+    border: 3px solid #ffe0b2;
+    border-radius: 16px;
+    padding: 8px 10px;
+    margin-top: 8px;
+  }
+  .map-region-actions.show { display: flex; }
+  .map-region-actions .region-actions-label {
+    flex: 1 1 100%;
+    font-size: 13px;
+    font-weight: bold;
+    color: #5d4037;
+  }
+  .map-region-actions button {
+    flex: 1;
+    min-width: 110px;
+    border: none;
+    border-radius: 12px;
+    padding: 9px 6px;
+    font-size: 12.5px;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+  }
+  .map-region-actions button:active { transform: translateY(2px); box-shadow: none; }
+  .region-actions-list { background: linear-gradient(180deg,#4fc3f7,#0288d1); }
+  .region-actions-quiz { background: linear-gradient(180deg,#ff8a65,#f4511e); }
+  .region-actions-back {
+    flex: 0 0 auto;
+    min-width: 42px;
+    background: linear-gradient(180deg,#90a4ae,#607d8b);
+  }
+
   .shape-icon-sm {
     display: inline-block;
     width: 40px;
@@ -697,7 +737,7 @@
     </div>
     <div class="hero" style="margin:2px 0 10px;">
       <h2 style="font-size:19px;">せかいちずから　ちいきを　えらんでね</h2>
-      <p style="font-size:12px; margin-top:2px;">🔍 ズームすると　こっきも　見えるよ</p>
+      <p style="font-size:12px; margin-top:2px;">👉 「〇〇アジア」などの　ちいきの　もじを　タップすると、そこだけ　おおきく　なるよ</p>
     </div>
     <div id="mapWrap">
       <div id="worldMap"></div>
@@ -706,7 +746,13 @@
         <button type="button" id="mapZoomOut" class="map-zoom-btn" aria-label="ズームアウト">－</button>
         <button type="button" id="mapZoomReset" class="map-zoom-btn map-zoom-reset" aria-label="もとにもどす">⟲</button>
       </div>
-      <div class="map-hint" id="mapHint">🔍 ピンチ／ボタンで ズーム・ドラッグで いどう</div>
+      <div class="map-hint" id="mapHint">📌 くにの　かたちを　タップすると　じょうほうが　見られるよ</div>
+    </div>
+    <div class="map-region-actions" id="mapRegionActions">
+      <span class="region-actions-label" id="mapRegionActionsLabel"></span>
+      <button type="button" class="region-actions-back" id="mapRegionBack" aria-label="ぜんたいちずに もどる">🗺️</button>
+      <button type="button" class="region-actions-list" id="mapRegionList">📖 いちらんで みる</button>
+      <button type="button" class="region-actions-quiz" id="mapRegionQuiz">🎯 クイズに ちょうせん</button>
     </div>
     <button class="big-btn" id="btnAllMix" style="background:linear-gradient(180deg,#ff8a80,#ff5252); margin-top:14px;">
       <span class="emo">🌈</span>
@@ -793,7 +839,7 @@
     </div>
     <div class="hero" style="margin:2px 0 10px;">
       <h2 style="font-size:19px;">にほんちずから　ちほうを　えらんでね</h2>
-      <p style="font-size:12px; margin-top:2px;">🔍 ズームすると　けんの　かたちや　なまえが　よく見えるよ</p>
+      <p style="font-size:12px; margin-top:2px;">👉 「とうほく」などの　ちほうの　もじを　タップすると、そこだけ　おおきく　なるよ</p>
     </div>
     <div id="jpMapWrap">
       <div id="japanMap"></div>
@@ -802,7 +848,13 @@
         <button type="button" id="jpMapZoomOut" class="map-zoom-btn" aria-label="ズームアウト">－</button>
         <button type="button" id="jpMapZoomReset" class="map-zoom-btn map-zoom-reset" aria-label="もとにもどす">⟲</button>
       </div>
-      <div class="map-hint" id="jpMapHint">🔍 ピンチ／ボタンで ズーム・ドラッグで いどう</div>
+      <div class="map-hint" id="jpMapHint">📌 けんの　かたちを　タップすると　じょうほうが　見られるよ</div>
+    </div>
+    <div class="map-region-actions" id="jpMapRegionActions">
+      <span class="region-actions-label" id="jpMapRegionActionsLabel"></span>
+      <button type="button" class="region-actions-back" id="jpMapRegionBack" aria-label="ぜんたいちずに もどる">🗾</button>
+      <button type="button" class="region-actions-list" id="jpMapRegionList">📖 いちらんで みる</button>
+      <button type="button" class="region-actions-quiz" id="jpMapRegionQuiz">🎯 クイズに ちょうせん</button>
     </div>
     <button class="big-btn" id="btnJpAllMix" style="background:linear-gradient(180deg,#ff8a80,#ff5252); margin-top:14px;">
       <span class="emo">🌈</span>
@@ -5547,11 +5599,88 @@ function setMapScale(newScale, originX, originY) {
   mapZoom.scale = clamped;
   clampMapPan();
   applyMapTransform();
+  if (focusedRegion && mapZoom.scale <= 1.05) clearMapRegionFocus();
 }
 
 function resetMapZoom() {
   mapZoom.scale = 1; mapZoom.tx = 0; mapZoom.ty = 0;
   applyMapTransform();
+  clearMapRegionFocus();
+}
+
+/* =========================================================
+   せかいちず：ちいきを タップしたら、その ちいきだけを
+   おおきく ズームして あわせる(エリアべつズーム)
+========================================================= */
+let focusedRegion = null;
+
+function mapRegionBBox(regionId) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  mapSvgEl.querySelectorAll(".map-country[data-region]").forEach((el) => {
+    if (el.dataset.region !== regionId) return;
+    let b;
+    try { b = el.getBBox(); } catch (err) { return; }
+    if (!b || b.width === 0) return;
+    minX = Math.min(minX, b.x); minY = Math.min(minY, b.y);
+    maxX = Math.max(maxX, b.x + b.width); maxY = Math.max(maxY, b.y + b.height);
+  });
+  if (minX === Infinity) return null;
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+function zoomMapToRegion(regionId) {
+  if (!mapSvgEl) return;
+  const bbox = mapRegionBBox(regionId);
+  if (!bbox) return;
+  const wrap = document.getElementById("worldMap");
+  const vb = mapSvgEl.viewBox.baseVal;
+  const naturalScale = wrap.clientWidth / vb.width;
+  const bx = bbox.x * naturalScale, by = bbox.y * naturalScale;
+  const bw = bbox.width * naturalScale, bh = bbox.height * naturalScale;
+  let s = Math.min(wrap.clientWidth / bw, wrap.clientHeight / bh) * 0.78;
+  s = Math.max(1.8, Math.min(mapZoom.max, s));
+  const cx = bx + bw / 2, cy = by + bh / 2;
+  mapZoom.scale = s;
+  mapZoom.tx = wrap.clientWidth / 2 - cx * s;
+  mapZoom.ty = wrap.clientHeight / 2 - cy * s;
+  clampMapPan();
+  applyMapTransform();
+  setMapRegionFocus(regionId);
+}
+
+function setMapRegionFocus(regionId) {
+  focusedRegion = regionId;
+  const r = REGIONS.find((x) => x.id === regionId);
+  mapSvgEl.querySelectorAll(".map-country[data-region]").forEach((el) => {
+    const on = el.dataset.region === regionId;
+    el.style.opacity = on ? "" : "0.15";
+    el.style.pointerEvents = on ? "" : "none";
+  });
+  // 国旗・国名のマーカーも、フォーカス中のちいき以外は非表示にする
+  // (となりのちいきのマーカーが、ズームした画面のはしに ちらっと 見えてしまうのを ふせぐ)
+  mapSvgEl.querySelectorAll(".map-flag-marker[data-region]").forEach((el) => {
+    const on = el.dataset.region === regionId;
+    el.style.display = on ? "" : "none";
+  });
+  mapSvgEl.querySelectorAll("text.map-label").forEach((t) => { t.style.display = "none"; });
+  document.getElementById("mapRegionActions").classList.add("show");
+  document.getElementById("mapRegionActionsLabel").textContent = r ? `${r.emoji} ${r.label}` : "";
+}
+
+function clearMapRegionFocus() {
+  focusedRegion = null;
+  if (mapSvgEl) {
+    mapSvgEl.querySelectorAll(".map-country[data-region]").forEach((el) => {
+      el.style.opacity = "";
+      el.style.pointerEvents = "";
+    });
+    mapSvgEl.querySelectorAll(".map-flag-marker[data-region]").forEach((el) => {
+      el.style.display = "";
+    });
+    mapSvgEl.querySelectorAll("text.map-label").forEach((t) => { t.style.display = ""; });
+  }
+  const panel = document.getElementById("mapRegionActions");
+  if (panel) panel.classList.remove("show");
 }
 
 function setupMapZoomPan() {
@@ -5700,11 +5829,24 @@ function renderWorldMap() {
         return;
       }
 
+      // くにの かたちそのものを タップしたときは、クイズをしなくても
+      // その くにだけの じょうほうを 読めるようにする(にほんちずと おなじ しくみ)
+      const countryEl = e.target.closest(".map-country[data-iso]");
+      if (countryEl) {
+        const region = countryEl.dataset.region;
+        if (region && region !== "none") {
+          const country = COUNTRIES.find((c) => c.id === countryEl.dataset.iso);
+          if (country) { showCountryInfoModal(country); return; }
+        }
+      }
+
+      // ちいきの ラベル(もじ)を タップしたときは、その ちいきだけを
+      // おおきく ズームして あわせる
       const el = e.target.closest("[data-region]");
       if (!el) return;
       const region = el.dataset.region;
       if (!region || region === "none") return;
-      showStudyList(region);
+      zoomMapToRegion(region);
     });
   }
   resetMapZoom();
@@ -5756,6 +5898,17 @@ document.getElementById("btnStudyQuiz").addEventListener("click", () => {
 });
 
 document.getElementById("btnAllMix").addEventListener("click", () => startQuiz("all"));
+
+// エリアべつズームの パネルの ボタン(いちらん・クイズ・ぜんたいに もどる)
+document.getElementById("mapRegionList").addEventListener("click", () => {
+  if (focusedRegion) showStudyList(focusedRegion);
+});
+document.getElementById("mapRegionQuiz").addEventListener("click", () => {
+  if (focusedRegion) startQuiz(focusedRegion);
+});
+document.getElementById("mapRegionBack").addEventListener("click", () => {
+  resetMapZoom();
+});
 
 document.querySelectorAll('[data-go]').forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -5992,11 +6145,88 @@ function setJpMapScale(newScale, originX, originY) {
   jpMapZoom.scale = clamped;
   clampJpMapPan();
   applyJpMapTransform();
+  if (jpFocusedRegion && jpMapZoom.scale <= 1.05) clearJpMapRegionFocus();
 }
 
 function resetJpMapZoom() {
   jpMapZoom.scale = 1; jpMapZoom.tx = 0; jpMapZoom.ty = 0;
   applyJpMapTransform();
+  clearJpMapRegionFocus();
+}
+
+/* =========================================================
+   にほんちず：ちほうを タップしたら、その ちほうだけを
+   おおきく ズームして あわせる(エリアべつズーム)
+========================================================= */
+let jpFocusedRegion = null;
+
+function jpRegionBBox(regionId) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  jpMapSvgEl.querySelectorAll(".map-pref[data-region]").forEach((el) => {
+    if (el.dataset.region !== regionId) return;
+    let b;
+    try { b = el.getBBox(); } catch (err) { return; }
+    if (!b || b.width === 0) return;
+    minX = Math.min(minX, b.x); minY = Math.min(minY, b.y);
+    maxX = Math.max(maxX, b.x + b.width); maxY = Math.max(maxY, b.y + b.height);
+  });
+  if (minX === Infinity) return null;
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+function zoomJpMapToRegion(regionId) {
+  if (!jpMapSvgEl) return;
+  const bbox = jpRegionBBox(regionId);
+  if (!bbox) return;
+  const wrap = document.getElementById("japanMap");
+  const vb = jpMapSvgEl.viewBox.baseVal;
+  const naturalScale = wrap.clientWidth / vb.width;
+  const bx = bbox.x * naturalScale, by = bbox.y * naturalScale;
+  const bw = bbox.width * naturalScale, bh = bbox.height * naturalScale;
+  let s = Math.min(wrap.clientWidth / bw, wrap.clientHeight / bh) * 0.78;
+  s = Math.max(1.8, Math.min(jpMapZoom.max, s));
+  const cx = bx + bw / 2, cy = by + bh / 2;
+  jpMapZoom.scale = s;
+  jpMapZoom.tx = wrap.clientWidth / 2 - cx * s;
+  jpMapZoom.ty = wrap.clientHeight / 2 - cy * s;
+  clampJpMapPan();
+  applyJpMapTransform();
+  setJpMapRegionFocus(regionId);
+}
+
+function setJpMapRegionFocus(regionId) {
+  jpFocusedRegion = regionId;
+  const r = JP_REGIONS.find((x) => x.id === regionId);
+  jpMapSvgEl.querySelectorAll(".map-pref[data-region]").forEach((el) => {
+    const on = el.dataset.region === regionId;
+    el.style.opacity = on ? "" : "0.15";
+    el.style.pointerEvents = on ? "" : "none";
+  });
+  // けんの なまえマーカーも、フォーカス中の ちほう いがいは 非表示にする
+  // (となりの ちほうの マーカーが、ズームした画面の はしに ちらっと 見えてしまうのを ふせぐ)
+  jpMapSvgEl.querySelectorAll(".jp-pref-marker[data-region]").forEach((el) => {
+    const on = el.dataset.region === regionId;
+    el.style.display = on ? "" : "none";
+  });
+  jpMapSvgEl.querySelectorAll("text.jp-map-label").forEach((t) => { t.style.display = "none"; });
+  document.getElementById("jpMapRegionActions").classList.add("show");
+  document.getElementById("jpMapRegionActionsLabel").textContent = r ? `${r.emoji} ${r.label}` : "";
+}
+
+function clearJpMapRegionFocus() {
+  jpFocusedRegion = null;
+  if (jpMapSvgEl) {
+    jpMapSvgEl.querySelectorAll(".map-pref[data-region]").forEach((el) => {
+      el.style.opacity = "";
+      el.style.pointerEvents = "";
+    });
+    jpMapSvgEl.querySelectorAll(".jp-pref-marker[data-region]").forEach((el) => {
+      el.style.display = "";
+    });
+    jpMapSvgEl.querySelectorAll("text.jp-map-label").forEach((t) => { t.style.display = ""; });
+  }
+  const panel = document.getElementById("jpMapRegionActions");
+  if (panel) panel.classList.remove("show");
 }
 
 function setupJpMapZoomPan() {
@@ -6078,6 +6308,7 @@ function injectJpPrefMarkers(svgEl) {
     const marker = document.createElementNS(svgNS, "g");
     marker.setAttribute("class", "jp-pref-marker");
     marker.setAttribute("data-pref", prefId);
+    marker.setAttribute("data-region", pref.region);
     marker.innerHTML =
       `<foreignObject x="${cx - 38}" y="${cy - 12}" width="76" height="24" style="overflow:visible;">` +
         `<div xmlns="http://www.w3.org/1999/xhtml" class="marker-ruby-outer">` +
@@ -6130,12 +6361,13 @@ function renderJapanMap() {
         return;
       }
 
-      // ちほうのラベル文字をタップしたときは、その地方の一覧・クイズへ進む
+      // ちほうのラベル文字をタップしたときは、その ちほうだけを
+      // おおきく ズームして あわせる
       const el = e.target.closest("[data-region]");
       if (!el) return;
       const region = el.dataset.region;
       if (!region) return;
-      showJapanStudyList(region);
+      zoomJpMapToRegion(region);
     });
   }
   resetJpMapZoom();
@@ -6176,6 +6408,17 @@ document.getElementById("btnJpStudyQuiz").addEventListener("click", () => {
 });
 
 document.getElementById("btnJpAllMix").addEventListener("click", () => startJapanQuiz("all"));
+
+// エリアべつズームの パネルの ボタン(いちらん・クイズ・ぜんたいに もどる)
+document.getElementById("jpMapRegionList").addEventListener("click", () => {
+  if (jpFocusedRegion) showJapanStudyList(jpFocusedRegion);
+});
+document.getElementById("jpMapRegionQuiz").addEventListener("click", () => {
+  if (jpFocusedRegion) startJapanQuiz(jpFocusedRegion);
+});
+document.getElementById("jpMapRegionBack").addEventListener("click", () => {
+  resetJpMapZoom();
+});
 
 /* =========================================================
    にほんへん：クイズ画面
