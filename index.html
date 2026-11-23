@@ -845,8 +845,22 @@
   .beads-zoom-title { display:flex; align-items:center; justify-content:center; gap:8px; margin:4px 0 2px; }
   .beads-zoom-title h3 { font-size:17px; margin:0; }
   .beads-zoom-sub { text-align:center; font-size:11px; color:#6b5b5b; margin:0 0 10px; }
-  .beads-zoom-svgwrap { width:100%; overflow:auto; border-radius:14px; background:#fffdf8; padding:8px; box-sizing:border-box; }
-  .beads-zoom-svgwrap svg { display:block; margin:0 auto; }
+  .beads-zoom-svgwrap {
+    position:relative; width:100%; height:min(58vh, 560px); overflow:hidden; border-radius:14px;
+    background:#fffdf8; border:2px solid #ffe0b2; box-sizing:border-box; touch-action:none; cursor:grab;
+    user-select:none; -webkit-user-select:none;
+  }
+  .beads-zoom-svgwrap:active { cursor:grabbing; }
+  .beads-zoom-ctl { position:absolute; right:8px; bottom:8px; display:flex; gap:6px; z-index:2; }
+  .beads-zoom-ctl button {
+    min-width:40px; height:40px; padding:0 10px; border:none; border-radius:999px; background:#ffffffee;
+    box-shadow:0 2px 6px rgba(0,0,0,0.25); font-weight:bold; font-size:18px; color:#6d4c41; cursor:pointer;
+  }
+  .beads-zoom-ctl button[data-zoom-act="fit"] { font-size:12px; }
+  .beads-zoom-level {
+    position:absolute; left:8px; bottom:12px; z-index:2; font-size:12px; font-weight:bold; color:#6d4c41;
+    background:#ffffffcc; border-radius:999px; padding:2px 8px; pointer-events:none;
+  }
 </style>
 
 <div id="app">
@@ -6543,13 +6557,129 @@ document.querySelectorAll('[data-beads-jump]').forEach((btn) => {
     if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 });
-/* 小さい図案は画面にぴったり、大きい図案はビーズが数えやすい大きさ（はみ出た分はスクロール） */
-function beadsZoomScale(d) {
-  const avail = Math.min(window.innerWidth * 0.96, 1100) - 56;
-  const w1 = d.w * 11 + 25;
-  const fit = Math.min(2.4, avail / w1);
-  return d.w <= 24 ? Math.max(1.0, fit) : Math.max(1.6, fit);   // 小はぜんぶ見える大きさに
+/* 2本ゆびで ひろげて拡大・1本ゆびで うごかす・2回タップで 拡大／もとどおり。
+   パソコンはマウスホイールとドラッグ。うごかしている間は軽い拡大、ゆびをはなしたら
+   図案をその大きさで描きなおして、ビーズのふちが ぼやけないようにする。 */
+function attachPinchZoom(view, opts) {
+  opts = opts || {};
+  const svg = view.querySelector("svg");
+  if (!svg) return null;
+  const W1 = parseFloat(svg.getAttribute("width")), H1 = parseFloat(svg.getAttribute("height"));
+  svg.style.position = "absolute"; svg.style.left = "0"; svg.style.top = "0";
+  svg.style.transformOrigin = "0 0"; svg.style.maxWidth = "none";
+  if (opts.autoHeight) {                           // 図案の形に合わせて わくの高さを決める（よぶんな すき間を へらす）
+    const fitH = view.clientWidth * H1 / W1;
+    view.style.height = Math.round(Math.min(window.innerHeight * 0.6, Math.max(fitH + 24, 280))) + "px";
+  }
+  let fit = 1, s = 1, cs = 1, tx = 0, ty = 0, maxS = 4;
+  if (view._pzAbort) view._pzAbort.abort();      // 前にひらいたときの ゆびの見はりを はずす
+  const ac = new AbortController(); view._pzAbort = ac;
+  const sig = { signal: ac.signal };
+  const pts = new Map();
+  let pinch = null, pan = null, lastTap = 0, lastTapX = 0, lastTapY = 0, moved = false, wheelTimer = 0;
+
+  function measure() {
+    const vw = view.clientWidth, vh = view.clientHeight;
+    fit = Math.min(vw / W1, vh / H1);
+    maxS = Math.max(fit * 8, 44 / 11);            // ビーズ1つが 44px くらいまで大きくできる
+  }
+  function clampView() {
+    const vw = view.clientWidth, vh = view.clientHeight, cw = W1 * s, ch = H1 * s;
+    tx = cw <= vw ? (vw - cw) / 2 : Math.min(0, Math.max(vw - cw, tx));
+    ty = ch <= vh ? (vh - ch) / 2 : Math.min(0, Math.max(vh - ch, ty));
+  }
+  function apply() {
+    clampView();
+    svg.style.transform = `translate(${tx}px,${ty}px) scale(${s / cs})`;
+    if (opts.onChange) opts.onChange(s / fit);
+  }
+  function commit() {                              // 今の大きさで描きなおす（くっきり）
+    if (cs === s) return;
+    cs = s;
+    svg.setAttribute("width", (W1 * cs).toFixed(1));
+    svg.setAttribute("height", (H1 * cs).toFixed(1));
+    apply();
+  }
+  function zoomAt(ns, px, py) {
+    ns = Math.min(maxS, Math.max(fit, ns));
+    tx = px - (px - tx) * ns / s;
+    ty = py - (py - ty) * ns / s;
+    s = ns;
+    apply();
+  }
+  function local(e) { const r = view.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function reset() { measure(); s = fit; tx = 0; ty = 0; apply(); commit(); }
+
+  view.addEventListener("pointerdown", (e) => {
+    view.setPointerCapture(e.pointerId);
+    pts.set(e.pointerId, local(e));
+    moved = false;
+    if (pts.size === 2) {
+      const [a, b] = [...pts.values()];
+      pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, s0: s, tx0: tx, ty0: ty };
+      pan = null;
+    } else if (pts.size === 1) {
+      const p = local(e);
+      pan = { x: p.x, y: p.y, tx0: tx, ty0: ty };
+    }
+  }, sig);
+  view.addEventListener("pointermove", (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, local(e));
+    if (pinch && pts.size >= 2) {
+      const [a, b] = [...pts.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y) || 1, mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      const ns = Math.min(maxS, Math.max(fit, pinch.s0 * d / pinch.d));
+      tx = mx - (pinch.mx - pinch.tx0) * ns / pinch.s0;
+      ty = my - (pinch.my - pinch.ty0) * ns / pinch.s0;
+      s = ns; moved = true;
+      apply();
+    } else if (pan) {
+      const p = local(e);
+      if (Math.abs(p.x - pan.x) + Math.abs(p.y - pan.y) > 4) moved = true;
+      tx = pan.tx0 + (p.x - pan.x); ty = pan.ty0 + (p.y - pan.y);
+      apply();
+    }
+  }, sig);
+  function end(e) {
+    if (!pts.has(e.pointerId)) return;
+    const p = pts.get(e.pointerId);
+    pts.delete(e.pointerId);
+    if (pts.size === 1) {                          // 2本→1本：のこった指で そのまま うごかせる
+      const q = [...pts.values()][0];
+      pinch = null; pan = { x: q.x, y: q.y, tx0: tx, ty0: ty };
+      return;
+    }
+    if (pts.size === 0) {
+      pinch = null; pan = null;
+      if (!moved) {                                // 2回タップ
+        const now = Date.now();
+        if (now - lastTap < 320 && Math.hypot(p.x - lastTapX, p.y - lastTapY) < 30) {
+          if (s > fit * 1.3) { s = fit; tx = 0; ty = 0; apply(); }
+          else zoomAt(fit * 3, p.x, p.y);
+          lastTap = 0;
+        } else { lastTap = now; lastTapX = p.x; lastTapY = p.y; }
+      }
+      commit();
+    }
+  }
+  view.addEventListener("pointerup", end, sig);
+  view.addEventListener("pointercancel", end, sig);
+  view.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const p = local(e);
+    zoomAt(s * Math.exp(-e.deltaY * 0.0015), p.x, p.y);
+    clearTimeout(wheelTimer); wheelTimer = setTimeout(commit, 150);
+  }, { passive: false, signal: ac.signal });
+  ["gesturestart", "gesturechange"].forEach((t) => view.addEventListener(t, (e) => e.preventDefault(), sig));
+
+  reset();
+  return {
+    zoomBy(k) { zoomAt(s * k, view.clientWidth / 2, view.clientHeight / 2); commit(); },
+    reset,
+  };
 }
+let beadsZoomCtl = null;
 function openBeadsZoom(id, mode) {
   const c = COUNTRIES.find((x) => x.id === id);
   if (!c) return;
@@ -6559,14 +6689,31 @@ function openBeadsZoom(id, mode) {
   body.innerHTML = `
     <div class="beads-zoom-title"><span class="flag-icon-sm">${FLAG_SVG[id] || ""}</span><h3>${c.name}</h3></div>
     <div class="beads-zoom-tabs">${vs.map((v) => `<button type="button" data-zoom-mode="${v.mode}" class="${v === cur ? "on" : ""}">${v.label}<small>${v.d.total}こ</small></button>`).join("")}</div>
-    <p class="beads-zoom-sub">${beadsMetaText(id, cur.mode)}${cur.d.w > 24 ? "<br>ゆびで　スクロールすると　みえない　ところも　みれるよ" : ""}</p>
-    <div class="beads-zoom-svgwrap">${beadSVG(id, beadsZoomScale(cur.d), cur.mode)}</div>
+    <p class="beads-zoom-sub">${beadsMetaText(id, cur.mode)}<br>2本ゆびで ひろげると 大きくなるよ。1本ゆびで うごかせるよ。</p>
+    <div class="beads-zoom-svgwrap">${beadSVG(id, 1, cur.mode)}
+      <div class="beads-zoom-ctl">
+        <button type="button" data-zoom-act="in" aria-label="大きくする">＋</button>
+        <button type="button" data-zoom-act="out" aria-label="小さくする">－</button>
+        <button type="button" data-zoom-act="fit" aria-label="ぜんたいを見る">ぜんたい</button>
+      </div>
+      <span class="beads-zoom-level"></span>
+    </div>
     <div class="beads-legend" style="justify-content:center;">${beadsLegendHTML(id, cur.mode)}</div>
   `;
   body.querySelectorAll("[data-zoom-mode]").forEach((b) => b.addEventListener("click", () => openBeadsZoom(id, b.dataset.zoomMode)));
   document.getElementById("beadsZoomModal").classList.remove("hidden");
-  const zw = body.querySelector(".beads-zoom-svgwrap");   // まん中から見せる
-  zw.scrollLeft = (zw.scrollWidth - zw.clientWidth) / 2;
+  const view = body.querySelector(".beads-zoom-svgwrap");
+  const level = body.querySelector(".beads-zoom-level");
+  beadsZoomCtl = attachPinchZoom(view, { autoHeight: true, onChange: (k) => { level.textContent = "×" + k.toFixed(1); } });
+  body.querySelectorAll("[data-zoom-act]").forEach((b) => {
+    b.addEventListener("pointerdown", (e) => e.stopPropagation());
+    b.addEventListener("click", () => {
+      const a = b.dataset.zoomAct;
+      if (a === "in") beadsZoomCtl.zoomBy(1.6);
+      else if (a === "out") beadsZoomCtl.zoomBy(1 / 1.6);
+      else beadsZoomCtl.reset();
+    });
+  });
 }
 function closeBeadsZoom() {
   document.getElementById("beadsZoomModal").classList.add("hidden");
